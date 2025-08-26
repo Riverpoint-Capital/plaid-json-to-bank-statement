@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaid Asset Report - Bank Statement Viewer</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f5f5f5;
+            min-height: 100vh;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: white;
+            padding: 20px 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            font-weight: normal;
+        }
+        
+        .header p {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 5px;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .upload-section {
+            background: white;
+            border-radius: 8px;
+            padding: 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            margin-bottom: 20px;
+        }
+        
+        .upload-area {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 40px 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #fafbfc;
+        }
+        
+        .upload-area:hover {
+            border-color: #4299e1;
+            background: #edf2f7;
+        }
+        
+        .upload-area.dragover {
+            border-color: #2b6cb0;
+            background: #e6f3ff;
+        }
+        
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
+        
+        .upload-text {
+            color: #2d3748;
+            font-size: 16px;
+            margin-bottom: 5px;
+        }
+        
+        .upload-subtext {
+            color: #718096;
+            font-size: 14px;
+        }
+        
+        input[type="file"] {
+            display: none;
+        }
+        
+        .error-message {
+            background: #fed7d7;
+            color: #9b2c2c;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+            border-left: 4px solid #fc8181;
+        }
+        
+        .error-message h3 {
+            margin-bottom: 5px;
+            font-size: 16px;
+        }
+        
+        .error-message p {
+            font-size: 14px;
+        }
+        
+        .success-message {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+            border-left: 4px solid #48bb78;
+        }
+        
+        .info-message {
+            background: #e6f3ff;
+            color: #2c5282;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 20px 0;
+            display: none;
+            border-left: 4px solid #4299e1;
+            font-size: 13px;
+        }
+        
+        .month-tabs {
+            display: none;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        
+        .tabs-header {
+            display: flex;
+            background: #f7fafc;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .tab-button {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            font-size: 14px;
+            color: #4a5568;
+            transition: all 0.3s;
+            border-bottom: 3px solid transparent;
+        }
+        
+        .tab-button:hover {
+            background: #edf2f7;
+        }
+        
+        .tab-button.active {
+            background: white;
+            color: #2b6cb0;
+            border-bottom-color: #2b6cb0;
+            font-weight: 600;
+        }
+        
+        .tab-button.mtd {
+            background: #fef3c7;
+        }
+        
+        .tab-button.mtd.active {
+            background: white;
+        }
+        
+        .tab-content {
+            display: none;
+            padding: 20px;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+        
+        .statement-container {
+            background: white;
+            max-width: 850px;
+            margin: 0 auto 30px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+        }
+        
+        .statement-page {
+            padding: 40px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .statement-header {
+            border-bottom: 2px solid #2d3748;
+            padding-bottom: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .bank-logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+        
+        .statement-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .statement-period {
+            color: #4a5568;
+            font-size: 14px;
+        }
+        
+        .account-info {
+            margin: 20px 0;
+            font-size: 14px;
+            color: #2d3748;
+        }
+        
+        .account-info div {
+            margin: 5px 0;
+        }
+        
+        .summary-box {
+            background: #f7fafc;
+            border: 1px solid #cbd5e0;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        
+        .summary-title {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 15px;
+            color: #2d3748;
+        }
+        
+        .summary-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 14px;
+        }
+        
+        .summary-row.total {
+            border-top: 2px solid #2d3748;
+            margin-top: 10px;
+            padding-top: 10px;
+            font-weight: bold;
+        }
+        
+        .section {
+            margin: 30px 0;
+            page-break-inside: avoid;
+        }
+        
+        .section-title {
+            background: #2d3748;
+            color: white;
+            padding: 8px 15px;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 0;
+        }
+        
+        .section-content {
+            border: 1px solid #cbd5e0;
+            border-top: none;
+        }
+        
+        .transaction-table {
+            width: 100%;
+            font-size: 13px;
+        }
+        
+        .transaction-table th {
+            background: #f7fafc;
+            padding: 10px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid #cbd5e0;
+        }
+        
+        .transaction-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .transaction-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .amount {
+            text-align: right;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .amount.credit {
+            color: #22543d;
+        }
+        
+        .amount.debit {
+            color: #9b2c2c;
+        }
+        
+        .subtotal-row {
+            background: #f7fafc;
+            font-weight: 600;
+        }
+        
+        .daily-balance-table {
+            width: 100%;
+            font-size: 12px;
+        }
+        
+        .daily-balance-table th {
+            background: #f7fafc;
+            padding: 8px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid #cbd5e0;
+        }
+        
+        .daily-balance-table td {
+            padding: 6px 8px;
+            border-bottom: 1px solid #e2e8f0;
+        }
+        
+        .no-transactions {
+            padding: 20px;
+            text-align: center;
+            color: #718096;
+            font-style: italic;
+        }
+        
+        .action-buttons {
+            margin-top: 20px;
+            text-align: center;
+        }
+        
+        .tab-actions {
+            text-align: center;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+        
+        .btn {
+            background: #2b6cb0;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 0 5px;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #2c5282;
+        }
+        
+        .btn-secondary {
+            background: #718096;
+        }
+        
+        .btn-secondary:hover {
+            background: #4a5568;
+        }
+        
+        .btn-download {
+            background: #48bb78;
+        }
+        
+        .btn-download:hover {
+            background: #38a169;
+        }
+        
+        .processing {
+            text-align: center;
+            padding: 20px;
+            color: #4a5568;
+            display: none;
+        }
+        
+        .spinner {
+            border: 3px solid #e2e8f0;
+            border-top: 3px solid #2b6cb0;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        @media print {
+            body {
+                background: white;
+            }
+            
+            .header,
+            .upload-section,
+            .tabs-header,
+            .action-buttons,
+            .tab-actions {
+                display: none !important;
+            }
+            
+            .statement-container {
+                box-shadow: none;
+            }
+            
+            .statement-page {
+                page-break-after: always;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>Plaid Asset Report - Bank Statement Viewer</h1>
+            <p>View Plaid Asset Report JSON as formatted bank statements</p>
+        </div>
+    </div>
+    
+    <div class="container">
+        <div class="upload-section">
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📊</div>
+                <div class="upload-text">Drop your Plaid Asset Report JSON here</div>
+                <div class="upload-subtext">Displays your data exactly as provided - no calculations</div>
+                <input type="file" id="fileInput" accept=".json,application/json">
+            </div>
+            
+            <div class="processing" id="processing">
+                <div class="spinner"></div>
+                <p>Reading Plaid Asset Report...</p>
+            </div>
+            
+            <div class="info-message" id="infoMessage"></div>
+            
+            <div class="error-message" id="errorMessage">
+                <h3>Error Processing File</h3>
+                <p id="errorText"></p>
+            </div>
+            
+            <div class="success-message" id="successMessage"></div>
+            
+            <div class="action-buttons" style="display: none;" id="globalActions">
+                <button class="btn btn-secondary" onclick="resetProcessor()">🔄 Process New File</button>
+            </div>
+        </div>
+        
+        <div class="month-tabs" id="monthTabs">
+            <div class="tabs-header" id="tabsHeader"></div>
+            <div id="tabContents"></div>
+        </div>
+    </div>
+    
+    <script>
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const errorMessage = document.getElementById('errorMessage');
+        const errorText = document.getElementById('errorText');
+        const successMessage = document.getElementById('successMessage');
+        const infoMessage = document.getElementById('infoMessage');
+        const processing = document.getElementById('processing');
+        const monthTabs = document.getElementById('monthTabs');
+        const tabsHeader = document.getElementById('tabsHeader');
+        const tabContents = document.getElementById('tabContents');
+        const globalActions = document.getElementById('globalActions');
+        
+        let processedData = null;
+        let monthlyStatements = {};
+        
+        // File upload handlers
+        uploadArea.addEventListener('click', () => fileInput.click());
+        
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+        });
+        
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+        });
+        
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+        
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+        
+        async function handleFile(file) {
+            if (file.type !== 'application/json') {
+                showError('Please upload a JSON file. The selected file appears to be: ' + (file.type || 'unknown type'));
+                return;
+            }
+            
+            processing.style.display = 'block';
+            errorMessage.style.display = 'none';
+            successMessage.style.display = 'none';
+            infoMessage.style.display = 'none';
+            
+            try {
+                const text = await file.text();
+                const data = JSON.parse(text);
+                
+                // Process Plaid Asset Report
+                processPlaidAssetReport(data);
+                
+            } catch (err) {
+                processing.style.display = 'none';
+                if (err instanceof SyntaxError) {
+                    showError('Invalid JSON file. Please ensure the file is properly formatted JSON.');
+                } else {
+                    showError(err.message || 'Failed to process the JSON file. Please check the file format.');
+                }
+                console.error('Processing error:', err);
+            }
+        }
+        
+        function showError(message) {
+            errorText.textContent = message;
+            errorMessage.style.display = 'block';
+            successMessage.style.display = 'none';
+        }
+        
+        function showInfo(message) {
+            infoMessage.innerHTML = `ℹ️ ${message}`;
+            infoMessage.style.display = 'block';
+        }
+        
+        function processPlaidAssetReport(data) {
+            try {
+                // Check if it's a Plaid Asset Report format
+                if (!data.report || !data.report.items) {
+                    throw new Error('Invalid Plaid Asset Report format. Expected structure: {report: {items: [...]}}');
+                }
+                
+                const report = data.report;
+                
+                // Get all dates from all data to find the actual range
+                const allDates = [];
+                let totalAccounts = 0;
+                let totalTransactions = 0;
+                
+                report.items.forEach(item => {
+                    if (item.accounts && Array.isArray(item.accounts)) {
+                        item.accounts.forEach(account => {
+                            totalAccounts++;
+                            
+                            // Collect transaction dates
+                            if (account.transactions && Array.isArray(account.transactions)) {
+                                account.transactions.forEach(transaction => {
+                                    totalTransactions++;
+                                    allDates.push(new Date(transaction.date));
+                                });
+                            }
+                            
+                            // Collect historical balance dates
+                            if (account.historical_balances && Array.isArray(account.historical_balances)) {
+                                account.historical_balances.forEach(balance => {
+                                    allDates.push(new Date(balance.date));
+                                });
+                            }
+                        });
+                    }
+                });
+                
+                if (allDates.length === 0) {
+                    throw new Error('No data found in the Asset Report.');
+                }
+                
+                // Find the date range
+                allDates.sort((a, b) => a - b);
+                const oldestDate = allDates[0];
+                const newestDate = allDates[allDates.length - 1];
+                
+                // Determine current month and find complete months
+                const currentDate = new Date();
+                const currentMonthKey = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
+                
+                // Get all unique months from the data
+                const monthsSet = new Set();
+                allDates.forEach(date => {
+                    const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+                    monthsSet.add(monthKey);
+                });
+                
+                // Sort months chronologically
+                const allMonths = Array.from(monthsSet).sort();
+                
+                // Identify which months are complete and which is MTD
+                let mtdMonth = null;
+                let completeMonths = [];
+                
+                // Check if the newest month in data is the current month
+                const newestMonthInData = allMonths[allMonths.length - 1];
+                
+                if (newestMonthInData === currentMonthKey || 
+                    new Date(newestDate).getMonth() === currentDate.getMonth() && 
+                    new Date(newestDate).getFullYear() === currentDate.getFullYear()) {
+                    // The newest month is the current month (MTD)
+                    mtdMonth = newestMonthInData;
+                    completeMonths = allMonths.slice(0, -1);
+                } else {
+                    // All months in data are complete
+                    completeMonths = allMonths;
+                }
+                
+                // Get the last 4 complete months
+                const selectedCompleteMonths = completeMonths.slice(-4);
+                
+                // Add MTD if it exists
+                const monthsToProcess = mtdMonth ? [...selectedCompleteMonths, mtdMonth] : selectedCompleteMonths;
+                
+                if (monthsToProcess.length === 0) {
+                    throw new Error('No months with data found in the Asset Report.');
+                }
+                
+                // Show info about what we found
+                const mtdInfo = mtdMonth ? ` + 1 MTD (${new Date(mtdMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })})` : '';
+                showInfo(`Found ${totalAccounts} accounts with ${totalTransactions} transactions. Displaying ${selectedCompleteMonths.length} complete months${mtdInfo}.`);
+                
+                // Process each month
+                monthlyStatements = {};
+                
+                monthsToProcess.forEach(monthKey => {
+                    const [year, month] = monthKey.split('-');
+                    const monthStart = new Date(year, month - 1, 1);
+                    const monthEnd = new Date(year, month, 0);
+                    const isMTD = (monthKey === mtdMonth);
+                    
+                    const monthData = {
+                        monthName: monthStart.toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+                        isMTD: isMTD,
+                        accounts: []
+                    };
+                    
+                    // Process each institution and account
+                    report.items.forEach(item => {
+                        if (item.accounts && Array.isArray(item.accounts)) {
+                            item.accounts.forEach(account => {
+                                // Filter transactions for this month - use string comparison to avoid timezone issues
+                                const monthTransactions = (account.transactions || []).filter(t => {
+                                    // Direct string comparison on the date
+                                    return t.date && t.date.startsWith(`${year}-${month.padStart(2, '0')}`);
+                                });
+                                
+                                // Filter historical balances for this month - use string comparison to avoid timezone issues
+                                const monthBalances = (account.historical_balances || []).filter(b => {
+                                    // Direct string comparison on the date
+                                    return b.date && b.date.startsWith(`${year}-${month.padStart(2, '0')}`);
+                                });
+                                
+                                if (monthTransactions.length > 0 || monthBalances.length > 0) {
+                                    // Collect ALL dates from both transactions and balances as strings
+                                    const allDateStrings = [];
+                                    
+                                    monthTransactions.forEach(t => {
+                                        if (t.date) allDateStrings.push(t.date);
+                                    });
+                                    
+                                    monthBalances.forEach(b => {
+                                        if (b.date) allDateStrings.push(b.date);
+                                    });
+                                    
+                                    if (allDateStrings.length > 0) {
+                                        // Sort date strings directly
+                                        allDateStrings.sort();
+                                        
+                                        // Get first and last dates as strings
+                                        const firstDateStr = allDateStrings[0];
+                                        const lastDateStr = allDateStrings[allDateStrings.length - 1];
+                                        
+                                        // Format dates for display without timezone conversion
+                                        const formatDateString = (dateStr) => {
+                                            const [year, month, day] = dateStr.split('-');
+                                            return `${parseInt(month)}/${parseInt(day)}/${year}`;
+                                        };
+                                        
+                                        const statementPeriod = `${formatDateString(firstDateStr)} - ${formatDateString(lastDateStr)}`;
+                                        
+                                        monthData.accounts.push({
+                                            account_id: account.account_id,
+                                            name: account.name,
+                                            official_name: account.official_name,
+                                            mask: account.mask,
+                                            type: account.type,
+                                            subtype: account.subtype,
+                                            institution_name: item.institution_name,
+                                            current_balance: account.balances.current,
+                                            available_balance: account.balances.available,
+                                            transactions: monthTransactions,
+                                            historical_balances: monthBalances,
+                                            statementPeriod: statementPeriod
+                                        });
+                                    }
+                                }
+                            });
+                        }
+                    });
+                    
+                    if (monthData.accounts.length > 0) {
+                        monthlyStatements[monthKey] = monthData;
+                    }
+                });
+                
+                if (Object.keys(monthlyStatements).length === 0) {
+                    throw new Error('No data found for the selected months.');
+                }
+                
+                processedData = data;
+                displayStatements();
+                processing.style.display = 'none';
+                successMessage.textContent = `✓ Successfully loaded ${totalAccounts} accounts with ${totalTransactions} transactions`;
+                successMessage.style.display = 'block';
+                globalActions.style.display = 'block';
+                
+            } catch (err) {
+                processing.style.display = 'none';
+                showError(err.message);
+                console.error('Data processing error:', err);
+            }
+        }
+        
+        function displayStatements() {
+            tabsHeader.innerHTML = '';
+            tabContents.innerHTML = '';
+            
+            const months = Object.keys(monthlyStatements).sort();
+            
+            months.forEach((monthKey, index) => {
+                const monthData = monthlyStatements[monthKey];
+                
+                // Create tab button
+                const tabBtn = document.createElement('button');
+                const tabLabel = monthData.isMTD ? `${monthData.monthName} (MTD)` : monthData.monthName;
+                tabBtn.className = 'tab-button' + (monthData.isMTD ? ' mtd' : '') + (index === months.length - 1 ? ' active' : '');
+                tabBtn.textContent = tabLabel;
+                tabBtn.onclick = () => switchTab(monthKey);
+                tabsHeader.appendChild(tabBtn);
+                
+                // Create tab content
+                const tabContent = document.createElement('div');
+                tabContent.id = `tab-${monthKey}`;
+                tabContent.className = 'tab-content' + (index === months.length - 1 ? ' active' : '');
+                
+                // Generate statement HTML for each account
+                let statementHTML = '';
+                monthData.accounts.forEach(accountData => {
+                    statementHTML += generateStatementHTML(accountData, monthData.monthName, monthData.isMTD);
+                });
+                
+                // Add download button for this month
+                statementHTML += `
+                    <div class="tab-actions">
+                        <button class="btn btn-download" onclick="downloadMonthStatement('${monthKey}')">
+                            📥 Download ${tabLabel} Statement (PDF)
+                        </button>
+                    </div>
+                `;
+                
+                tabContent.innerHTML = statementHTML;
+                tabContents.appendChild(tabContent);
+            });
+            
+            monthTabs.style.display = 'block';
+        }
+        
+        function generateStatementHTML(data, monthName, isMTD) {
+            // Get beginning and ending balances from historical_balances
+            let beginningBalance = null;
+            let endingBalance = null;
+            
+            if (data.historical_balances && data.historical_balances.length > 0) {
+                // Sort balances by date to ensure correct order
+                const sortedBalances = [...data.historical_balances].sort((a, b) => 
+                    a.date.localeCompare(b.date)
+                );
+                
+                // First balance of the month is beginning balance
+                beginningBalance = sortedBalances[0].current;
+                // Last balance of the month is ending balance
+                endingBalance = sortedBalances[sortedBalances.length - 1].current;
+            } else if (data.current_balance !== null && data.current_balance !== undefined) {
+                // Fallback: if no historical balances, but we have current balance and it's the most recent month
+                // we could use current balance as ending balance
+                if (isMTD) {
+                    endingBalance = data.current_balance;
+                }
+                // For beginning balance without historical data, we'd need to calculate backwards
+                // but user wants to avoid calculations, so leave it null
+            }
+            
+            // Separate deposits and withdrawals
+            const deposits = [];
+            const withdrawals = [];
+            let totalDeposits = 0;
+            let totalWithdrawals = 0;
+            
+            // Process transactions
+            data.transactions.forEach(t => {
+                const amount = Math.abs(t.amount);
+                
+                // Format date without timezone issues
+                const formatDateStr = (dateStr) => {
+                    const [year, month, day] = dateStr.split('-');
+                    return `${parseInt(month)}/${parseInt(day)}/${year}`;
+                };
+                
+                const txn = {
+                    date: formatDateStr(t.date),
+                    originalDate: t.date, // Keep original for sorting
+                    description: (t.original_description || t.name || 'Transaction').substring(0, 50),
+                    amount: amount
+                };
+                
+                if (t.amount < 0) {
+                    // Negative = deposit/credit
+                    deposits.push(txn);
+                    totalDeposits += amount;
+                } else {
+                    // Positive = withdrawal/debit
+                    withdrawals.push(txn);
+                    totalWithdrawals += amount;
+                }
+            });
+            
+            // Sort by original date string (YYYY-MM-DD sorts correctly)
+            deposits.sort((a, b) => a.originalDate.localeCompare(b.originalDate));
+            withdrawals.sort((a, b) => a.originalDate.localeCompare(b.originalDate));
+            
+            const mtdLabel = isMTD ? ' (Month-to-Date)' : '';
+            
+            let html = `
+                <div class="statement-container">
+                    <div class="statement-page">
+                        <div class="statement-header">
+                            <div class="bank-logo">${data.institution_name || 'Financial Institution'}</div>
+                            <div class="statement-title">ACCOUNT STATEMENT${mtdLabel}</div>
+                            <div class="statement-period">${data.statementPeriod}</div>
+                        </div>
+                        
+                        <div class="account-info">
+                            <div><strong>Account Name:</strong> ${data.name}</div>
+                            <div><strong>Account Number:</strong> ****${data.mask}</div>
+                            <div><strong>Account Type:</strong> ${data.subtype || data.type}</div>
+                            <div><strong>Statement Period:</strong> ${monthName}${mtdLabel}</div>
+                        </div>
+                        
+                        <div class="summary-box">
+                            <div class="summary-title">ACCOUNT SUMMARY</div>
+                            ${beginningBalance !== null ? `
+                            <div class="summary-row">
+                                <span>Beginning Balance</span>
+                                <span class="amount">${formatCurrency(beginningBalance)}</span>
+                            </div>` : ''}
+                            <div class="summary-row">
+                                <span>Deposits and Other Credits</span>
+                                <span class="amount credit">+${formatCurrency(totalDeposits)}</span>
+                            </div>
+                            <div class="summary-row">
+                                <span>Withdrawals and Other Debits</span>
+                                <span class="amount debit">-${formatCurrency(totalWithdrawals)}</span>
+                            </div>
+                            ${endingBalance !== null ? `
+                            <div class="summary-row total">
+                                <span>Ending Balance</span>
+                                <span class="amount">${formatCurrency(endingBalance)}</span>
+                            </div>` : ''}
+                        </div>
+            `;
+            
+            // Section 1: Deposits and Other Credits
+            html += `
+                <div class="section">
+                    <div class="section-title">DEPOSITS AND OTHER CREDITS</div>
+                    <div class="section-content">
+            `;
+            
+            if (deposits.length > 0) {
+                html += `
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th class="amount">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                deposits.forEach(t => {
+                    html += `
+                        <tr>
+                            <td>${t.date}</td>
+                            <td>${t.description}</td>
+                            <td class="amount credit">${formatCurrency(t.amount)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        <tr class="subtotal-row">
+                            <td colspan="2">Total Deposits</td>
+                            <td class="amount credit">${formatCurrency(totalDeposits)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                `;
+            } else {
+                html += '<div class="no-transactions">No deposits this period</div>';
+            }
+            
+            html += '</div></div>';
+            
+            // Section 2: Withdrawals and Other Debits
+            html += `
+                <div class="section">
+                    <div class="section-title">WITHDRAWALS AND OTHER DEBITS</div>
+                    <div class="section-content">
+            `;
+            
+            if (withdrawals.length > 0) {
+                html += `
+                    <table class="transaction-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Description</th>
+                                <th class="amount">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                withdrawals.forEach(t => {
+                    html += `
+                        <tr>
+                            <td>${t.date}</td>
+                            <td>${t.description}</td>
+                            <td class="amount debit">${formatCurrency(t.amount)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        <tr class="subtotal-row">
+                            <td colspan="2">Total Withdrawals</td>
+                            <td class="amount debit">${formatCurrency(totalWithdrawals)}</td>
+                        </tr>
+                    </tbody>
+                </table>
+                `;
+            } else {
+                html += '<div class="no-transactions">No withdrawals this period</div>';
+            }
+            
+            html += '</div></div>';
+            
+            // Section 3: Daily Ending Balance Summary
+            html += `
+                <div class="section">
+                    <div class="section-title">DAILY ENDING BALANCE SUMMARY</div>
+                    <div class="section-content">
+            `;
+            
+            if (data.historical_balances && data.historical_balances.length > 0) {
+                // Sort balances by date
+                const sortedBalances = [...data.historical_balances].sort((a, b) => 
+                    new Date(a.date) - new Date(b.date)
+                );
+                
+                html += `
+                    <table class="daily-balance-table">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th class="amount">Ending Balance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                `;
+                
+                sortedBalances.forEach(balance => {
+                    // Format date without timezone issues
+                    const formatDateStr = (dateStr) => {
+                        const [year, month, day] = dateStr.split('-');
+                        return `${parseInt(month)}/${parseInt(day)}/${year}`;
+                    };
+                    
+                    html += `
+                        <tr>
+                            <td>${formatDateStr(balance.date)}</td>
+                            <td class="amount">${formatCurrency(balance.current)}</td>
+                        </tr>
+                    `;
+                });
+                
+                html += `
+                        </tbody>
+                    </table>
+                `;
+            } else {
+                html += '<div class="no-transactions">No daily balance data available for this period</div>';
+            }
+            
+            html += '</div></div>';
+            html += '</div></div>';
+            
+            return html;
+        }
+        
+        function formatCurrency(amount) {
+            if (amount === null || amount === undefined) {
+                return '$0.00';
+            }
+            return new Intl.NumberFormat('en-US', {
+                style: 'currency',
+                currency: 'USD',
+                minimumFractionDigits: 2
+            }).format(Math.abs(amount));
+        }
+        
+        function switchTab(monthKey) {
+            // Update buttons
+            document.querySelectorAll('.tab-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.remove('active');
+            });
+            document.getElementById(`tab-${monthKey}`).classList.add('active');
+        }
+        
+        async function downloadMonthStatement(monthKey) {
+            const monthData = monthlyStatements[monthKey];
+            if (!monthData) return;
+            
+            const { jsPDF } = window.jspdf;
+            
+            // Create a temporary container for ALL accounts in this month
+            const tempContainer = document.createElement('div');
+            tempContainer.style.position = 'absolute';
+            tempContainer.style.left = '-9999px';
+            tempContainer.style.top = '0';
+            tempContainer.style.width = '850px';
+            tempContainer.style.background = 'white';
+            document.body.appendChild(tempContainer);
+            
+            // Add all accounts to the container
+            monthData.accounts.forEach(accountData => {
+                tempContainer.innerHTML += generateStatementHTML(accountData, monthData.monthName, monthData.isMTD);
+            });
+            
+            // Wait for rendering
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Generate canvas of the entire content
+            const canvas = await html2canvas(tempContainer, {
+                scale: 2,
+                logging: false,
+                backgroundColor: '#ffffff',
+                useCORS: true,
+                allowTaint: true,
+                windowWidth: 850
+            });
+            
+            // Create PDF with proper dimensions
+            const pdf = new jsPDF('p', 'mm', 'letter');
+            const imgWidth = 190;
+            const pageHeight = 272; // Slightly less than full page to account for margins
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 0;
+            
+            // Add first page
+            pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, 10, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+            
+            // Add additional pages if needed
+            while (heightLeft > 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(canvas.toDataURL('image/png'), 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+            
+            // Cleanup
+            document.body.removeChild(tempContainer);
+            
+            // Save PDF
+            const mtdLabel = monthData.isMTD ? '_MTD' : '';
+            const monthName = monthData.monthName.replace(/\s+/g, '_');
+            const fileName = `bank_statement_${monthName}${mtdLabel}_${new Date().toISOString().split('T')[0]}.pdf`;
+            pdf.save(fileName);
+        }
+        
+        function resetProcessor() {
+            processedData = null;
+            monthlyStatements = {};
+            fileInput.value = '';
+            monthTabs.style.display = 'none';
+            successMessage.style.display = 'none';
+            errorMessage.style.display = 'none';
+            infoMessage.style.display = 'none';
+            globalActions.style.display = 'none';
+            tabsHeader.innerHTML = '';
+            tabContents.innerHTML = '';
+        }
+    </script>
+</body>
+</html>
