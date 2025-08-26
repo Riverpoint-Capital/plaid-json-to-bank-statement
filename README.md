@@ -2,11 +2,20 @@
 
 A simple HTML-based tool that converts Plaid Asset Report JSON data into traditional bank statement format, helping operations teams transition from manual bank statement review to automated Plaid data processing.
 
+## 🌐 Live Tool
+
+**Access the tool here:** https://riverpoint-capital.github.io/plaid-json-to-bank-statement/
+
 ## Purpose
 
 This tool serves as a **short-term bridge solution** for loan application scrubbing teams who are transitioning to accept financial data via Plaid. Since teams are accustomed to reviewing traditional bank statements, this converter restructures Plaid Asset Report data into familiar bank statement formats.
 
-## How to Run Locally
+## How to Access
+
+### Option 1: Use the Deployed Version (Recommended)
+Simply visit: https://riverpoint-capital.github.io/plaid-json-to-bank-statement/
+
+### Option 2: Run Locally
 
 ### Quick Start
 
@@ -156,9 +165,45 @@ The repository includes three test JSON files for demonstration:
 - `test2 plaid_asset_report_2025-08-22.json`
 - `test3 plaid_asset_report_2025-08-25.json`
 
-## Security Note
+## 🔒 Security & Privacy
 
-All processing happens locally in your browser. No data is sent to external servers except for loading the JavaScript libraries from CDN.
+### How Your Data is Protected
+
+#### **100% Client-Side Processing**
+- **All data processing happens locally in YOUR browser**
+- The JSON file you upload never leaves your computer
+- No data is transmitted to any server (including GitHub Pages)
+- The tool works entirely with JavaScript running on your machine
+
+#### **What This Means**
+- ✅ **Your financial data is NEVER uploaded anywhere**
+- ✅ **GitHub/GitHub Pages cannot see your data**
+- ✅ **No logs or analytics track your data**
+- ✅ **Complete privacy - as secure as opening the file in Notepad**
+
+#### **Network Requests**
+The only network activity when using the tool:
+1. **Initial page load** - Downloads the HTML/CSS/JavaScript code
+2. **CDN libraries** - Fetches jsPDF and html2canvas from Cloudflare CDN
+3. **That's it** - No data ever sent back
+
+#### **How to Verify**
+You can verify this yourself:
+1. Open browser Developer Tools (F12)
+2. Go to Network tab
+3. Upload and process your JSON file
+4. Notice: No network requests contain your data
+
+#### **Additional Security Notes**
+- The GitHub repository is public (code is auditable)
+- Test data files are excluded via .gitignore
+- No cookies or local storage used
+- No tracking or analytics implemented
+- PDF generation happens locally in your browser
+
+### Privacy Summary
+
+**Your sensitive financial data never leaves your computer.** This tool is as private as using Excel or any other desktop application - the only difference is it runs in a web browser instead of being installed software.
 
 ## Support
 
